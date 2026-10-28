@@ -26,8 +26,8 @@ Flow:
    `chrome.runtime.sendMessage`.
 3. `background.js` calls the TypeSafe API, one request per post, with a capped number of requests in flight.
 4. `background.js` returns `{id, hide, flagged, scores, request, response}`. `content.js` logs each
-   request and response to the page console and highlights flagged posts in red with a label
-   naming the categories. Flagged posts stay visible for now so false positives are easy to check.
+   request and response to the page console and gives flagged posts a 10px red border; nothing
+   else about the post changes. Flagged posts stay visible for now so false positives are easy to check.
 
 Network calls stay in the service worker, not the content script. The content script would be
 subject to the page's CSP and CORS, and the API key would be exposed to the page.

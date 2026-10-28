@@ -1,5 +1,5 @@
 // Injected on icon click. Collects post text, asks the background to moderate it,
-// and highlights flagged posts in red (they stay visible).
+// and gives flagged posts a 10px red border (they stay visible).
 // Runs as a classic script and may be injected more than once per page.
 
 (async () => {
@@ -46,7 +46,7 @@
     }
     el.setAttribute(ATTR_STATE, result.hide ? 'flagged' : 'ok');
     if (result.hide) {
-      highlight(el, result.flagged);
+      highlight(el);
       flaggedCount++;
     }
   }
@@ -63,16 +63,7 @@
     console.groupEnd();
   }
 
-  function highlight(el, flagged) {
-    el.style.setProperty('background-color', '#fde2e2', 'important');
-    el.style.setProperty('color', '#7a1010', 'important');
-    el.style.setProperty('outline', '2px solid #d33', 'important');
-
-    const label = document.createElement('div');
-    label.textContent = `Flagged by go-touch-grass: ${flagged.join(', ')}`;
-    label.style.cssText =
-      'margin:4px 0 0;padding:2px 6px;display:inline-block;border-radius:3px;' +
-      'background:#d33;color:#fff;font:bold 12px sans-serif;';
-    el.before(label);
+  function highlight(el) {
+    el.style.setProperty('border', '10px solid red', 'important');
   }
 })();
