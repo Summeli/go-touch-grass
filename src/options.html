@@ -21,11 +21,11 @@
 
     <label for="selector">Post selector (CSS)</label>
     <input id="selector" type="text" required>
-    <small>Matches the div that contains each post's text, e.g. <code>.post</code> or <code>div.message-body</code>.</small>
+    <small>Matches the div that contains each post's text, e.g. <code>.message</code> on ylilauta.org.</small>
 
-    <label for="threshold">Hide threshold (0–1)</label>
+    <label for="threshold">Flag threshold (0–1)</label>
     <input id="threshold" type="number" min="0" max="1" step="0.05" required>
-    <small>A post is hidden if Jev's probability for any category is at or above this value.</small>
+    <small>A post is flagged if Jev's probability for any category is at or above this value.</small>
 
     <button type="submit">Save</button><span id="status"></span>
   </form>

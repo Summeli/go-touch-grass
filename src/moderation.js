@@ -6,7 +6,7 @@ export const MODEL = 'jev-latest';
 
 export const DEFAULT_SETTINGS = {
   apiKey: '',
-  selector: '.post',
+  selector: '.message', // ylilauta.org post body
   threshold: 0.7,
 };
 
