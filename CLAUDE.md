@@ -13,7 +13,7 @@ When the user clicks the extension icon, the extension finds the text blocks in 
 ```
 manifest.json         MV3 manifest: action, background service worker, permissions
 src/background.js     Service worker: handles icon clicks, calls the TypeSafe API
-src/content.js        Injected into the page: collects post text, hides flagged posts
+src/content.js        Injected into the page: collects post text, highlights flagged posts
 src/options.html/.js  Options page: API key, post selector, threshold
 src/moderation.js     Builds the Jev request and applies the hide policy (pure, testable)
 ```
@@ -25,9 +25,9 @@ Flow:
    gives each one an id (`data-gtg-id`) and sends `{id, text}` items to the background via
    `chrome.runtime.sendMessage`.
 3. `background.js` calls the TypeSafe API, one request per post, with a capped number of requests in flight.
-4. `background.js` returns `{id, hide, scores}` and `content.js` hides the flagged posts. Prefer
-   collapsing the post behind a "Hidden by go-touch-grass, click to show" placeholder over
-   `display:none`, so the user can check false positives.
+4. `background.js` returns `{id, hide, flagged, scores, request, response}`. `content.js` logs each
+   request and response to the page console and highlights flagged posts in red with a label
+   naming the categories. Flagged posts stay visible for now so false positives are easy to check.
 
 Network calls stay in the service worker, not the content script. The content script would be
 subject to the page's CSP and CORS, and the API key would be exposed to the page.
@@ -83,13 +83,13 @@ they run in parallel:
 
 The response contains `answers.<id>.noul`, which is the probability of "yes" (0–1).
 
-Hide policy (lives in `moderation.js`): hide the post if **any** category's `noul` is at or above
+Hide policy (lives in `moderation.js`): flag the post if **any** category's `noul` is at or above
 the threshold (default `0.7`, configurable in options). Keep the raw scores so the threshold can
 change without calling the API again. A value near 0.5 means the model is uncertain, not that the
 content is mildly offensive. Tune the threshold on real forum samples, not by guessing.
 
 Errors: if a request fails (network error, 4xx/5xx, rate limit), leave the post **visible** and
-log the error. Never hide a post because of a failed call.
+log the error. Never flag a post because of a failed call.
 
 ## API key handling
 

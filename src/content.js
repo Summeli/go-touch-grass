@@ -1,5 +1,5 @@
 // Injected on icon click. Collects post text, asks the background to moderate it,
-// and collapses flagged posts behind a click-to-show placeholder.
+// and highlights flagged posts in red (they stay visible).
 // Runs as a classic script and may be injected more than once per page.
 
 (async () => {
@@ -35,36 +35,44 @@
 
   const { results } = await chrome.runtime.sendMessage({ type: 'moderate', posts: payload });
 
-  let hidden = 0;
+  let flaggedCount = 0;
   for (const result of results) {
     const el = byId.get(result.id);
     if (!el) continue;
+    logResult(result, el);
     if (result.error) {
       el.removeAttribute(ATTR_STATE); // allow retry on next click
       continue;
     }
-    el.setAttribute(ATTR_STATE, result.hide ? 'hidden' : 'ok');
+    el.setAttribute(ATTR_STATE, result.hide ? 'flagged' : 'ok');
     if (result.hide) {
-      collapse(el, result.flagged);
-      hidden++;
+      highlight(el, result.flagged);
+      flaggedCount++;
     }
   }
-  console.info(`go-touch-grass: checked ${results.length} posts, hid ${hidden}`);
+  console.info(`go-touch-grass: checked ${results.length} posts, flagged ${flaggedCount}`);
 
-  function collapse(el, flagged) {
-    const previousDisplay = el.style.display;
-    el.style.display = 'none';
+  function logResult(result, el) {
+    if (result.skipped) return;
+    const verdict = result.error ? 'error' : result.hide ? `MODERATE (${result.flagged.join(', ')})` : 'ok';
+    console.groupCollapsed(`go-touch-grass: post ${result.id} -> ${verdict}`);
+    console.log('element', el);
+    console.log('request', result.request);
+    if (result.error) console.log('error', result.error);
+    else console.log('response', result.response);
+    console.groupEnd();
+  }
 
-    const placeholder = document.createElement('button');
-    placeholder.type = 'button';
-    placeholder.textContent = `Hidden by go-touch-grass (${flagged.join(', ')}). Click to show.`;
-    placeholder.style.cssText =
-      'display:block;width:100%;margin:4px 0;padding:8px;border:1px dashed #999;' +
-      'background:#f4f4f4;color:#555;font:13px sans-serif;text-align:left;cursor:pointer;';
-    placeholder.addEventListener('click', () => {
-      el.style.display = previousDisplay;
-      placeholder.remove();
-    });
-    el.before(placeholder);
+  function highlight(el, flagged) {
+    el.style.setProperty('background-color', '#fde2e2', 'important');
+    el.style.setProperty('color', '#7a1010', 'important');
+    el.style.setProperty('outline', '2px solid #d33', 'important');
+
+    const label = document.createElement('div');
+    label.textContent = `Flagged by go-touch-grass: ${flagged.join(', ')}`;
+    label.style.cssText =
+      'margin:4px 0 0;padding:2px 6px;display:inline-block;border-radius:3px;' +
+      'background:#d33;color:#fff;font:bold 12px sans-serif;';
+    el.before(label);
   }
 })();

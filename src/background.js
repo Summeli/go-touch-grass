@@ -53,33 +53,39 @@ async function moderatePosts(posts) {
   const results = await mapWithConcurrency(posts, MAX_CONCURRENT_REQUESTS, async ({ id, text }) => {
     const prepared = prepareText(text);
     if (!prepared) return { id, hide: false, skipped: true };
+    const request = buildRequest(prepared);
     try {
-      const scores = await judge(prepared, apiKey);
+      const response = await judge(request, apiKey);
+      const scores = extractScores(response);
       const flagged = flaggedCategories(scores, threshold);
-      return { id, hide: flagged.length > 0, flagged, scores };
+      return { id, hide: flagged.length > 0, flagged, scores, request, response };
     } catch (error) {
       // Never hide a post because a call failed.
       console.error(`go-touch-grass: post ${id} not moderated`, error);
-      return { id, hide: false, error: String(error.message ?? error) };
+      return { id, hide: false, error: String(error.message ?? error), request };
     }
   });
   return { results };
 }
 
-async function judge(text, apiKey) {
+async function judge(request, apiKey) {
+  console.log('go-touch-grass: request', request);
   const response = await fetch(API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify(buildRequest(text)),
+    body: JSON.stringify(request),
   });
   if (!response.ok) {
     const body = await response.text().catch(() => '');
+    console.log(`go-touch-grass: response ${response.status}`, body);
     throw new Error(`TypeSafe API ${response.status}: ${body.slice(0, 200)}`);
   }
-  return extractScores(await response.json());
+  const json = await response.json();
+  console.log('go-touch-grass: response', json);
+  return json;
 }
 
 async function mapWithConcurrency(items, limit, fn) {
